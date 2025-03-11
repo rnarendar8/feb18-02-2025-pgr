@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Patient {
+  id         String @id @default(uuid())
+  name       String
+  age        Int
+  gender     String
+  contact    String
+  roomNumber String // ✅ Add this field (since Prisma expects it)
+
+  dietChart  DietChart?
+  deliveries Delivery[]
+  Meal       Meal[]
+}
+
+model DietChart {
+  id                  String  @id @default(uuid())
+  morningMeal         String
+  afternoonMeal       String // ✅ Add this required field
+  eveningMeal         String
+  nightMeal           String
+  ingredients         String?
+  specialInstructions String?
+
+  patient   Patient @relation(fields: [patientId], references: [id])
+  patientId String  @unique
+}
+
+model Delivery {
+  id          String    @id @default(uuid())
+  status      String    @default("Pending") // ✅ Ensure this exists
+  deliveredAt DateTime?
+
+  deliveryPersonnel   DeliveryPersonnel @relation(fields: [deliveryPersonnelId], references: [id])
+  deliveryPersonnelId String
+
+  patient   Patient @relation(fields: [patientId], references: [id])
+  patientId String
+}
+
+model PantryStaff {
+  id       String @id @default(uuid())
+  name     String
+  contact  String
+  location String
+}
+
+model DeliveryPersonnel {
+  id   String @id @default(uuid())
+  name String
+
+  deliveries Delivery[]
+}
+
+model User {
+  id       String @id @default(uuid())
+  name     String
+  email    String @unique
+  password String
+  role     Role   @default(DELIVERY_PERSONNEL)
+}
+
+enum Role {
+  HOSPITAL_MANAGER
+  PANTRY_STAFF
+  DELIVERY_PERSONNEL
+}
+
+model Meal {
+  id Int @id @default(autoincrement())
+
+  // ✅ Change patientId to String & add relation
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  status String @default("Pending") // Can be 'Pending', 'Ready', 'Delivered'
+}
